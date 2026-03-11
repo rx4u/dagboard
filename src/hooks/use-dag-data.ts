@@ -59,6 +59,44 @@ export function useDagData() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemo]);
 
+  // Demo animation — append a synthetic commit every 5s to simulate live agent activity
+  useEffect(() => {
+    if (!isDemo) return;
+    let tick = 0;
+    const intervalId = setInterval(() => {
+      const g = graphRef.current;
+      if (!g || g.agents.length === 0) return;
+
+      const agentId = g.agents[tick % g.agents.length];
+      tick += 1;
+
+      const leafHash = g.leaves.find(lh => g.nodes.get(lh)?.agentId === agentId);
+      if (!leafHash) return;
+
+      const parent = g.nodes.get(leafHash);
+      if (!parent) return;
+
+      const currentVal = parent.metric?.value ?? 0.9;
+      const newVal = +(currentVal * (0.993 + Math.random() * 0.005)).toFixed(4);
+      const newHash = Math.random().toString(16).slice(2, 10);
+
+      const newCommit: Commit = {
+        hash: newHash,
+        parent_hash: leafHash,
+        agent_id: agentId,
+        message: `val_bpb: ${newVal} — training step ${parent.generation + 1}`,
+        created_at: new Date().toISOString(),
+      };
+
+      const current = graphRef.current;
+      if (!current) return;
+      setGraph(mergeNewCommits(current, [newCommit], getActiveMetric(metricRef.current)));
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, setGraph]);
+
   // Initial full fetch — staleTime:Infinity so it never auto-refetches for the same server
   // Skip in demo/github mode or if graph already set
   const { data: commits, isLoading, error } = useQuery<Commit[]>({
