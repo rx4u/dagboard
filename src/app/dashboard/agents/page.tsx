@@ -1,20 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Robot, Plus, Copy, Check } from "@phosphor-icons/react";
+import { Robot, Plus, Copy, Check, Eye, EyeSlash, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useStore } from "@/lib/store";
 import { getAgentColor } from "@/lib/agent-colors";
 import { api } from "@/lib/api";
+import { timeAgo } from "@/lib/utils";
+import { computeAgentHealth, healthStatusColor, healthStatusLabel } from "@/lib/agent-health";
 
 export default function AgentsPage() {
-  const { connection, graph } = useStore();
+  const { connection, graph, settings, toggleAgentVisibility } = useStore();
   const hasAdminKey = !!connection?.adminKey;
   const isGitHub = connection?.serverUrl.startsWith('github://') ?? false;
 
   const agents = graph?.agents ?? [];
+  const health = graph ? computeAgentHealth(graph, settings.idleThresholdMinutes) : new Map();
+  const stalledCount = Array.from(health.values()).filter((h) => h.status === 'stalled').length;
 
   const [showCreate, setShowCreate] = useState(false);
   const [newAgentId, setNewAgentId] = useState("");
@@ -47,7 +51,15 @@ export default function AgentsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <div className="section-label">Agents</div>
+        <div className="flex items-center gap-2">
+          <div className="section-label">Agents</div>
+          {stalledCount > 0 && (
+            <div className="flex items-center gap-1 text-[11px] text-regressed">
+              <Warning size={12} />
+              <span>{stalledCount} stalled</span>
+            </div>
+          )}
+        </div>
         {hasAdminKey && (
           <Button
             onClick={() => { setShowCreate(true); setCreatedKey(""); setCreateError(""); }}
@@ -134,7 +146,6 @@ export default function AgentsPage() {
         </p>
       )}
 
-      {/* Agent list from graph */}
       {agents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
           <Robot size={24} className="text-ghost mb-3" />
@@ -144,31 +155,69 @@ export default function AgentsPage() {
           </div>
         </div>
       ) : (
-        <div className="border border-border-subtle rounded-[6px] overflow-hidden max-w-[560px]">
-          <div className="grid grid-cols-[1fr_80px] gap-0 px-4 py-2 border-b border-border-subtle bg-surface-1">
+        <div className="border border-border-subtle rounded-[6px] overflow-hidden max-w-[640px]">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_80px_80px_80px_32px] gap-0 px-4 py-2 border-b border-border-subtle bg-surface-1">
             <div className="text-[10px] font-medium uppercase tracking-wider text-ghost">Agent</div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-ghost text-right">Status</div>
             <div className="text-[10px] font-medium uppercase tracking-wider text-ghost text-right">Commits</div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-ghost text-right">Last active</div>
+            <div />
           </div>
+
+          {/* Rows */}
           {agents.map((agentId) => {
             const color = getAgentColor(agentId);
-            const commitCount = graph
-              ? Array.from(graph.nodes.values()).filter((n) => n.agentId === agentId).length
-              : 0;
+            const h = health.get(agentId);
+            const isHidden = settings.hiddenAgents.includes(agentId);
 
             return (
               <div
                 key={agentId}
-                className="grid grid-cols-[1fr_80px] gap-0 px-4 py-3 border-b border-border-subtle last:border-0"
+                className={`grid grid-cols-[1fr_80px_80px_80px_32px] gap-0 px-4 py-3 border-b border-border-subtle last:border-0 transition-opacity ${isHidden ? 'opacity-40' : ''}`}
               >
+                {/* Agent name */}
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: color }}
-                  />
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                   <span className="text-[13px] text-secondary">{agentId}</span>
                 </div>
+
+                {/* Status */}
                 <div className="flex items-center justify-end">
-                  <span className="text-[12px] text-ghost font-mono">{commitCount}</span>
+                  {h ? (
+                    <div className="flex items-center gap-1">
+                      <div
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: healthStatusColor(h.status) }}
+                      />
+                      <span className="text-[11px] text-ghost">{healthStatusLabel(h.status)}</span>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-ghost">—</span>
+                  )}
+                </div>
+
+                {/* Commit count */}
+                <div className="flex items-center justify-end">
+                  <span className="text-[12px] text-ghost font-mono">{h?.commitCount ?? 0}</span>
+                </div>
+
+                {/* Last active */}
+                <div className="flex items-center justify-end">
+                  <span className="text-[11px] text-ghost">
+                    {h?.lastCommitAt ? timeAgo(h.lastCommitAt) : '—'}
+                  </span>
+                </div>
+
+                {/* Visibility toggle */}
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => toggleAgentVisibility(agentId)}
+                    className="p-1 rounded-[2px] text-ghost hover:text-muted hover:bg-surface-2 transition-colors"
+                    title={isHidden ? 'Show in DAG' : 'Hide from DAG'}
+                  >
+                    {isHidden ? <EyeSlash size={12} /> : <Eye size={12} />}
+                  </button>
                 </div>
               </div>
             );
