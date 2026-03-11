@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plug, CaretDown, CaretUp, GithubLogo, ArrowLeft } from "@phosphor-icons/react";
-import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useStore, useHasHydrated } from "@/lib/store";
 import { parseGitHubRepo } from "@/lib/github";
@@ -36,7 +35,6 @@ export default function ConnectPage() {
     if (hydrated && isConnected) router.push("/dashboard");
   }, [hydrated, isConnected, router]);
 
-  const [mode, setMode] = useState<"server" | "github">("server");
   const [serverUrl, setServerUrl] = useState("http://localhost:8080");
   const [apiKey, setApiKey] = useState("");
   const [adminKey, setAdminKey] = useState("");
@@ -157,33 +155,45 @@ export default function ConnectPage() {
 
         {/* ─── Right: tabbed form ─── */}
         <div className="w-full md:w-[320px] flex-shrink-0">
+          {/* ── GitHub section (top — zero friction) ── */}
           <div className="mb-5">
-            <h2 className="text-[15px] font-semibold mb-1" style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}>
-              Get started
-            </h2>
-            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
-              Connect a server, paste a GitHub repo, or try the demo.
+            <p className="text-[10px] font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-ghost)" }}>
+              No server needed
+            </p>
+            <div className="flex gap-2">
+              <input type="text" value={githubRepo} onChange={(e) => setGithubRepo(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && githubRepo && handleGitHub()}
+                className="flex-1 min-w-0 rounded-[6px] px-3 py-2 text-[12px] focus:outline-none transition-colors font-mono"
+                style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-default)")}
+                placeholder="owner/repo or GitHub URL" />
+              <button onClick={handleGitHub} disabled={!githubRepo.trim()}
+                className="flex items-center gap-1.5 rounded-[6px] px-3 py-2 text-[12px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                style={{ background: "var(--surface-3)", border: "1px solid var(--border-default)", color: "var(--text-primary)" }}
+                onMouseEnter={(e) => { if (githubRepo.trim()) (e.currentTarget as HTMLElement).style.background = "var(--surface-4)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--surface-3)"; }}>
+                <GithubLogo size={13} />
+                Visualize
+              </button>
+            </div>
+            <p className="text-[11px] mt-1.5" style={{ color: "var(--text-ghost)" }}>
+              Paste any public GitHub repo — owner/repo or full URL
             </p>
           </div>
 
-          {/* Mode tabs */}
-          <div className="flex gap-1 mb-4 rounded-[6px] p-0.5" style={{ border: "1px solid var(--border-subtle)", background: "var(--surface-1)" }}>
-            {(["server", "github"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(""); }}
-                className={cn(
-                  "flex-1 rounded-[4px] px-3 py-1.5 text-[12px] transition-colors",
-                  mode === m ? "text-primary" : "text-ghost hover:text-muted"
-                )}
-                style={mode === m ? { background: "var(--surface-3)", color: "var(--text-primary)" } : { color: "var(--text-ghost)" }}
-              >
-                {m === "server" ? "AgentHub server" : "GitHub repo"}
-              </button>
-            ))}
+          {/* ── or divider ── */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
+            <span className="text-[11px]" style={{ color: "var(--text-ghost)" }}>or</span>
+            <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
           </div>
 
-          {mode === "server" ? (
+          {/* ── AgentHub server section ── */}
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-ghost)" }}>
+              Have an agenthub server?
+            </p>
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[11px] block" style={{ color: "var(--text-muted)" }}>Server URL</label>
@@ -246,29 +256,7 @@ export default function ConnectPage() {
                 {loading ? "Connecting..." : "Connect"}
               </button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] block" style={{ color: "var(--text-muted)" }}>Repository</label>
-                <input type="text" value={githubRepo} onChange={(e) => setGithubRepo(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && githubRepo && handleGitHub()}
-                  className="w-full rounded-[6px] px-3 py-2 text-[12px] focus:outline-none transition-colors font-mono"
-                  style={inputStyle}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-default)")}
-                  placeholder="owner/repo or GitHub URL" />
-              </div>
-              {error && <p className="text-[11px]" style={{ color: "var(--regressed)" }}>{error}</p>}
-              <button onClick={handleGitHub} disabled={!githubRepo.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-[6px] px-4 py-2 text-[12px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: "var(--surface-3)", border: "1px solid var(--border-default)", color: "var(--text-primary)" }}
-                onMouseEnter={(e) => { if (githubRepo.trim()) (e.currentTarget as HTMLElement).style.background = "var(--surface-4)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--surface-3)"; }}>
-                <GithubLogo size={14} />
-                Visualize
-              </button>
-            </div>
-          )}
+          </div>
 
           <div className="mt-6 pt-5 flex items-center justify-between" style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <p className="text-[11px]" style={{ color: "var(--text-ghost)" }}>
