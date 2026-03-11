@@ -110,4 +110,6 @@ export interface AppSettings {
   density: 'dense' | 'comfortable';
   sidebarExpanded: boolean;
   theme: 'dark' | 'light';
+  hiddenAgents: string[];
+  idleThresholdMinutes: number;
 }

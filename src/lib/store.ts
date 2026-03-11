@@ -63,6 +63,7 @@ interface AppStore {
   updateSettings: (partial: Partial<AppSettings>) => void;
   toggleSidebar: () => void;
   toggleTheme: () => void;
+  toggleAgentVisibility: (agentId: string) => void;
 }
 
 const DEFAULT_METRIC: MetricConfig = {
@@ -183,6 +184,8 @@ export const useStore = create<AppStore>()(
         density: 'dense',
         sidebarExpanded: false,
         theme: 'dark',
+        hiddenAgents: [],
+        idleThresholdMinutes: 15,
       },
       updateSettings: (partial) =>
         set((s) => ({ settings: { ...s.settings, ...partial } })),
@@ -190,6 +193,14 @@ export const useStore = create<AppStore>()(
         set((s) => ({ settings: { ...s.settings, sidebarExpanded: !s.settings.sidebarExpanded } })),
       toggleTheme: () =>
         set((s) => ({ settings: { ...s.settings, theme: s.settings.theme === 'dark' ? 'light' : 'dark' } })),
+      toggleAgentVisibility: (agentId) =>
+        set((s) => {
+          const hidden = s.settings.hiddenAgents;
+          const next = hidden.includes(agentId)
+            ? hidden.filter((id) => id !== agentId)
+            : [...hidden, agentId];
+          return { settings: { ...s.settings, hiddenAgents: next } };
+        }),
     }),
     {
       name: 'agenthub-store',
