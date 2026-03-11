@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GitBranch, Robot, Clock, Trophy, Plug, ArrowsClockwise, SquaresFour } from "@phosphor-icons/react";
 import { GithubLogo } from "@phosphor-icons/react";
 import { useStore } from "@/lib/store";
@@ -114,6 +114,15 @@ export default function DagPage() {
   const { isLoading, error } = useDagData();
   const [viewMode, setViewMode] = useState<ViewMode>('dag');
 
+  useEffect(() => {
+    const check = () => {
+      if (window.innerWidth < 768) setViewMode('grid')
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const totalCommits = graph?.nodes.size ?? 0;
   const agentCount = graph?.agents.length ?? 0;
   const activeLeaves = graph?.leaves.length ?? 0;
@@ -220,7 +229,7 @@ export default function DagPage() {
               {dag.selectedNodeId ? 'shift+click to compare' : 'click to select · shift+click to compare'}
             </span>
           )}
-          <div className="flex gap-0.5 border border-border-subtle rounded-[4px] p-0.5" style={{ background: 'var(--surface-1)' }}>
+          <div className="hidden md:flex gap-0.5 border border-border-subtle rounded-[4px] p-0.5" style={{ background: 'var(--surface-1)' }}>
             {([
               { mode: 'dag' as ViewMode, Icon: GitBranch, label: 'DAG' },
               { mode: 'grid' as ViewMode, Icon: SquaresFour, label: 'Grid' },

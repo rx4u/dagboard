@@ -340,6 +340,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
+        {/* Mobile notice */}
+        <div
+          className="md:hidden px-4 py-2.5 text-center text-[12px] border-b"
+          style={{
+            background: 'var(--surface-2)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-mono)',
+          }}
+        >
+          DAG canvas works best on desktop
+        </div>
+
         {/* Only this area re-renders on navigation */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 animate-fade-up">
