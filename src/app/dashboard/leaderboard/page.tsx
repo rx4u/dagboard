@@ -53,6 +53,22 @@ export default function LeaderboardPage() {
   const metricName = metricConfig.name || "metric";
   const hasData = graph && graph.nodes.size > 0;
 
+  // Per-agent summary — must be declared before any early returns (Rules of Hooks)
+  const agentSummary = useMemo(() => {
+    if (!graph) return [];
+    return graph.agents.map((agentId) => {
+      const agentRows = rows.filter((r) => r.agentId === agentId);
+      const best = agentRows[0] ?? null;
+      const commitCount = Array.from(graph.nodes.values()).filter((n) => n.agentId === agentId).length;
+      return { agentId, best, commitCount };
+    }).sort((a, b) => {
+      if (!a.best && !b.best) return 0;
+      if (!a.best) return 1;
+      if (!b.best) return -1;
+      return a.best.rank - b.best.rank;
+    });
+  }, [graph, rows]);
+
   // Select node in store without navigating away — user can still go to DAG via sidebar
   function handleRowClick(hash: string) {
     selectNode(dag.selectedNodeId === hash ? null : hash);
@@ -128,22 +144,6 @@ export default function LeaderboardPage() {
       </div>
     );
   }
-
-  // Per-agent summary for the grid at top
-  const agentSummary = useMemo(() => {
-    if (!graph) return [];
-    return graph.agents.map((agentId) => {
-      const agentRows = rows.filter((r) => r.agentId === agentId);
-      const best = agentRows[0] ?? null; // rows already sorted best-first
-      const commitCount = Array.from(graph.nodes.values()).filter((n) => n.agentId === agentId).length;
-      return { agentId, best, commitCount };
-    }).sort((a, b) => {
-      if (!a.best && !b.best) return 0;
-      if (!a.best) return 1;
-      if (!b.best) return -1;
-      return a.best.rank - b.best.rank;
-    });
-  }, [graph, rows]);
 
   return (
     <div>
