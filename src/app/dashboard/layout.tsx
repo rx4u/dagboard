@@ -5,9 +5,10 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   GitBranch, Trophy, ChatText, GitDiff, GearSix, Robot,
-  CaretLineLeft, CaretLineRight, Sun, Moon, Plus, X, Plug, GithubLogo,
+  CaretLineLeft, CaretLineRight, Sun, Moon, Plus, X, Plug, GithubLogo, Warning,
 } from "@phosphor-icons/react";
 import { useStore, useHasHydrated } from "@/lib/store";
+import { computeAgentHealth } from "@/lib/agent-health";
 import { api } from "@/lib/api";
 import { parseGitHubRepo } from "@/lib/github";
 import { cn, timeAgo } from "@/lib/utils";
@@ -180,10 +181,17 @@ function AddWorkspaceDialog({ onClose }: { onClose: () => void }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isConnected, connection, settings, tabs, activeTabId, switchTab, removeTab, addWorkspace, toggleSidebar, toggleTheme } = useStore();
+  const { isConnected, connection, settings, graph, tabs, activeTabId, switchTab, removeTab, addWorkspace, toggleSidebar, toggleTheme } = useStore();
   const hydrated = useHasHydrated();
   const expanded = settings.sidebarExpanded;
   const hasAdmin = !!connection?.adminKey;
+  const stalledAgents = (() => {
+    if (!graph) return [];
+    const health = computeAgentHealth(graph, settings.idleThresholdMinutes);
+    return Array.from(health.entries())
+      .filter(([, h]) => h.status === 'stalled')
+      .map(([id]) => id);
+  })();
   const [showAddWorkspace, setShowAddWorkspace] = useState(false);
 
   useEffect(() => {
@@ -333,6 +341,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               {settings.theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
             </button>
+            {/* Stalled agent alert */}
+            {stalledAgents.length > 0 && (
+              <Link
+                href="/dashboard/agents"
+                className="flex items-center gap-1 text-[11px] text-regressed hover:text-regressed/80 transition-colors"
+                title={`${stalledAgents.length} agent${stalledAgents.length > 1 ? 's' : ''} stalled: ${stalledAgents.join(', ')}`}
+              >
+                <Warning size={13} />
+                <span>{stalledAgents.length} stalled</span>
+              </Link>
+            )}
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-improved dot-pulse" />
               <span className="text-[11px] text-muted">Connected</span>
