@@ -11,6 +11,7 @@ import { useStore, useHasHydrated } from "@/lib/store";
 import { api } from "@/lib/api";
 import { parseGitHubRepo } from "@/lib/github";
 import { cn, timeAgo } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: GitBranch, label: "DAG", shortcut: "1" },
@@ -341,7 +342,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Only this area re-renders on navigation */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 animate-fade-up">{children}</div>
+          <div className="p-6 animate-fade-up">
+            <ErrorBoundary label="panel error">
+              {children}
+            </ErrorBoundary>
+          </div>
         </div>
       </div>
 
