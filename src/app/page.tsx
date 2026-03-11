@@ -561,7 +561,7 @@ export default function LandingPage() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}
             >
-              Try demo
+              Launch dashboard
               <ArrowUpRight size={12} />
             </Link>
           </div>
