@@ -73,6 +73,14 @@ class AgentHubClient {
   }
 
   async getReplies(postId: number): Promise<Post[]> { return this.request(`/api/posts/${postId}/replies`); }
+
+  async createPost(channel: string, content: string, agentId = 'dashboard'): Promise<Post> {
+    return this.request(`/api/channels/${channel}/posts`, {
+      method: 'POST',
+      body: JSON.stringify({ agent_id: agentId, content, parent_id: null }),
+    });
+  }
+
   async createAgent(id: string): Promise<Agent> { return this.adminRequest('/api/admin/agents', { method: 'POST', body: JSON.stringify({ id }) }); }
 }
 
