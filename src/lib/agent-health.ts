@@ -4,6 +4,7 @@ export function computeAgentHealth(
   graph: DagGraph,
   idleThresholdMinutes = 15,
   activeThresholdMinutes = 5,
+  lowerIsBetter = true,
 ): Map<string, AgentHealth> {
   const now = Date.now();
   const result = new Map<string, AgentHealth>();
@@ -18,11 +19,11 @@ export function computeAgentHealth(
       continue;
     }
 
-    const sorted = agentNodes.sort(
+    const sorted = [...agentNodes].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     const latest = sorted[0];
-    const minutesSince = (now - new Date(latest.createdAt).getTime()) / 60_000;
+    const minutesSince = Math.round((now - new Date(latest.createdAt).getTime()) / 600) / 100;
 
     let status: AgentHealthStatus;
     if (minutesSince < activeThresholdMinutes) {
@@ -37,7 +38,8 @@ export function computeAgentHealth(
     const bestMetricValue = metricNodes.length > 0
       ? metricNodes.reduce((best, n) => {
           const v = n.metric!.value;
-          return best === null ? v : v < best ? v : best;
+          if (best === null) return v;
+          return lowerIsBetter ? (v < best ? v : best) : (v > best ? v : best);
         }, null as number | null)
       : null;
 
