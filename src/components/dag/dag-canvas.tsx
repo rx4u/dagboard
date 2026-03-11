@@ -52,8 +52,19 @@ export function DagCanvas({ isLoading }: { isLoading?: boolean }) {
   useEffect(() => {
     if (!graph || graph.nodes.size === 0) return;
     const { nodes: newNodes, edges: newEdges } = layoutDagGraph(graph);
+
+    const hidden = new Set(settings.hiddenAgents);
+    const filteredNodes = newNodes.filter((n) => {
+      const agentId = (n.data as DagNodeData).node?.agentId;
+      return !agentId || !hidden.has(agentId);
+    });
+    const visibleIds = new Set(filteredNodes.map((n) => n.id));
+    const filteredEdges = newEdges.filter(
+      (e) => visibleIds.has(e.source) && visibleIds.has(e.target)
+    );
+
     setNodes(
-      newNodes.map(n => ({
+      filteredNodes.map(n => ({
         ...n,
         data: {
           ...n.data,
@@ -62,13 +73,13 @@ export function DagCanvas({ isLoading }: { isLoading?: boolean }) {
         },
       }))
     );
-    setEdges(newEdges);
+    setEdges(filteredEdges);
     // Animated fit after React updates the DOM
     setTimeout(() => {
       rfInstance.current?.fitView({ padding: 0.1, duration: 400 });
     }, 80);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph]);
+  }, [graph, settings.hiddenAgents]);
 
   // Update selection state without re-layout
   useEffect(() => {
@@ -84,6 +95,23 @@ export function DagCanvas({ isLoading }: { isLoading?: boolean }) {
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dag.selectedNodeId, dag.compareNodeId]);
+
+  // Zoom to a single agent when filterByAgent changes
+  useEffect(() => {
+    if (!dag.filterByAgent || !rfInstance.current) return;
+    setTimeout(() => {
+      const agentNodes = nodes.filter(
+        (n) => (n.data as DagNodeData).node?.agentId === dag.filterByAgent
+      );
+      if (agentNodes.length === 0) return;
+      rfInstance.current?.fitView({
+        nodes: agentNodes,
+        padding: 0.15,
+        duration: 400,
+      });
+    }, 80);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dag.filterByAgent]);
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (e, node) => {
