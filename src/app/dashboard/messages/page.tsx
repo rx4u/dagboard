@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChatText } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import { ChatText, PaperPlaneTilt, Terminal } from "@phosphor-icons/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api";
 import { getAgentColor } from "@/lib/agent-colors";
@@ -41,20 +41,107 @@ const DEMO_POSTS: Record<string, Post[]> = {
 
 function PostCard({ post }: { post: Post }) {
   const color = getAgentColor(post.agent_id);
+  const isDashboard = post.agent_id === 'dashboard';
+
+  const isCommand = /^(TASK|PAUSE|RESUME|BROADCAST):/i.test(post.content.trim());
+  const commandMatch = post.content.trim().match(/^(TASK|PAUSE|RESUME|BROADCAST):\s*/i);
+  const commandType = commandMatch ? commandMatch[1].toUpperCase() : null;
+  const commandBody = commandType
+    ? post.content.trim().slice(commandMatch![0].length)
+    : post.content;
 
   return (
-    <div className="border-b border-border-subtle last:border-0 py-3 px-4">
+    <div className={`border-b border-border-subtle last:border-0 py-3 px-4 ${isCommand ? 'bg-surface-1' : ''}`}>
       <div className="flex items-center gap-2 mb-1.5">
-        <div
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-          style={{ backgroundColor: color }}
-        />
+        {isDashboard ? (
+          <Terminal size={10} className="text-ghost flex-shrink-0" />
+        ) : (
+          <div
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: color }}
+          />
+        )}
         <span className="text-[12px] font-medium text-secondary">{post.agent_id}</span>
+        {commandType && (
+          <span className="text-[10px] font-mono px-1 rounded-[2px] bg-surface-3 text-muted border border-border-subtle">
+            {commandType}
+          </span>
+        )}
         <span className="text-[11px] text-ghost ml-auto">{timeAgo(post.created_at)}</span>
       </div>
       <div className="text-[13px] text-primary leading-relaxed whitespace-pre-wrap break-words">
-        {post.content}
+        {commandBody}
       </div>
+    </div>
+  );
+}
+
+function ComposeBar({ channel }: { channel: string }) {
+  const qc = useQueryClient();
+  const [content, setContent] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  const SHORTCUTS = ['TASK: ', 'PAUSE: ', 'RESUME: ', 'BROADCAST: '];
+
+  async function handleSend() {
+    const trimmed = content.trim();
+    if (!trimmed || sending) return;
+    setSending(true);
+    setError('');
+    try {
+      await api.createPost(channel, trimmed);
+      setContent('');
+      qc.invalidateQueries({ queryKey: ['posts', channel] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+  return (
+    <div className="border-t border-border-subtle px-4 py-3 bg-surface-1">
+      {/* Shortcut chips */}
+      <div className="flex items-center gap-1 mb-2">
+        {SHORTCUTS.map((s) => (
+          <button
+            key={s}
+            onClick={() => setContent((prev) => prev.startsWith(s) ? prev : s + prev.replace(/^(TASK|PAUSE|RESUME|BROADCAST):\s*/i, ''))}
+            className="text-[10px] font-mono px-1.5 py-0.5 rounded-[2px] bg-surface-2 text-ghost hover:text-muted border border-border-subtle transition-colors"
+          >
+            {s.trim()}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2 items-end">
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={`Send to #${channel} — ⌘↵ to send`}
+          rows={2}
+          className="flex-1 bg-surface-2 border border-border-default rounded-[6px] px-3 py-2 text-[12px] text-primary placeholder:text-ghost resize-none focus:outline-none focus:border-border-subtle font-mono"
+        />
+        <button
+          onClick={handleSend}
+          disabled={!content.trim() || sending}
+          className="flex items-center justify-center w-8 h-8 rounded-[6px] bg-surface-3 border border-border-default text-primary hover:bg-surface-4 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          title="Send (⌘↵)"
+        >
+          <PaperPlaneTilt size={13} />
+        </button>
+      </div>
+
+      {error && <p className="text-[11px] text-regressed mt-1">{error}</p>}
     </div>
   );
 }
@@ -202,7 +289,7 @@ export default function MessagesPage() {
         </div>
 
         {/* Post feed */}
-        <div className="flex-1 min-w-0 border border-border-subtle rounded-[6px] overflow-hidden">
+        <div className="flex-1 min-w-0 border border-border-subtle rounded-[6px] overflow-hidden flex flex-col">
           {postsLoading ? (
             <div className="p-4 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -210,25 +297,30 @@ export default function MessagesPage() {
               ))}
             </div>
           ) : !posts || posts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <ChatText size={20} className="text-ghost mb-2" />
-              <div className="text-[13px] text-ghost">No messages in #{activeChannel}</div>
-            </div>
+            <>
+              <div className="flex-1 flex flex-col items-center justify-center py-16">
+                <ChatText size={20} className="text-ghost mb-2" />
+                <div className="text-[13px] text-ghost">No messages in #{activeChannel}</div>
+              </div>
+              {activeChannel && <ComposeBar channel={activeChannel} />}
+            </>
           ) : (
-            <div>
+            <>
               {/* Channel header */}
-              <div className="px-4 py-2.5 border-b border-border-subtle bg-surface-1 flex items-center justify-between">
+              <div className="px-4 py-2.5 border-b border-border-subtle bg-surface-1 flex items-center justify-between flex-shrink-0">
                 <span className="text-[12px] font-medium text-secondary">#{activeChannel}</span>
                 <span className="text-[11px] text-ghost">{posts.length} messages</span>
               </div>
 
-              {/* Posts - newest first */}
-              <div>
+              {/* Posts - newest first, scrollable */}
+              <div className="flex-1 overflow-y-auto">
                 {[...posts].reverse().map((post) => (
                   <PostCard key={post.id} post={post} />
                 ))}
               </div>
-            </div>
+
+              {activeChannel && <ComposeBar channel={activeChannel} />}
+            </>
           )}
         </div>
       </div>
