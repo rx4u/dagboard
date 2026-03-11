@@ -276,8 +276,8 @@ export default function DagPage() {
         <DagCanvas isLoading={isLoading} />
       ) : (
         <div
-          className="border border-border-subtle rounded-[6px] overflow-hidden animate-fade-in"
-          style={{ minHeight: 280 }}
+          className="border border-border-subtle rounded-[6px] overflow-y-auto overflow-x-hidden animate-fade-in"
+          style={{ height: 360 }}
         >
           {!graph || graph.nodes.size === 0 ? (
             <div className="flex items-center justify-center py-16">
@@ -294,43 +294,38 @@ export default function DagPage() {
                   return (
                     <div
                       key={commit.hash}
-                      className="relative rounded-[4px] overflow-hidden bg-surface-1 hover:bg-surface-2 transition-colors cursor-pointer"
+                      className="rounded-[4px] px-3 pt-2.5 pb-2.5 bg-surface-1 hover:bg-surface-2 transition-colors cursor-pointer"
                       style={{
                         border: `1px solid ${isSelected ? 'var(--border-default)' : 'var(--border-subtle)'}`,
                         background: isSelected ? 'var(--surface-2)' : undefined,
                       }}
                     >
-                      {/* Agent color bar */}
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
-                      <div className="pl-3.5 pr-3 pt-2.5 pb-2.5">
-                        {/* Top row: agent + hash */}
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[11px] text-secondary truncate font-medium">{commit.agentId}</span>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {isBest && (
-                              <span className="text-[9px] font-medium uppercase tracking-wider px-1 py-0.5 rounded-[2px]"
-                                style={{ background: 'var(--surface-3)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
-                                best
-                              </span>
-                            )}
-                            <span className="text-[10px] font-mono text-ghost">{shortHash(commit.hash)}</span>
-                          </div>
-                        </div>
-                        {/* Message */}
-                        <div className="text-[12px] text-primary line-clamp-2 leading-snug mb-2">
-                          {commit.message.split('\n')[0]}
-                        </div>
-                        {/* Bottom row: metric + timestamp */}
-                        <div className="flex items-center justify-between">
-                          {commit.metric ? (
-                            <span className="text-[13px] font-mono font-medium" style={{ color }}>
-                              {commit.metric.value.toFixed(4)}
-                            </span>
-                          ) : (
-                            <span />
-                          )}
-                          <span className="text-[10px] text-ghost">{timeAgo(commit.createdAt)}</span>
-                        </div>
+                      {/* Top row: dot + agent + hash */}
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-[11px] text-secondary truncate flex-1">{commit.agentId}</span>
+                        {isBest && (
+                          <span className="text-[9px] font-medium uppercase tracking-wider px-1 py-0.5 rounded-[2px] flex-shrink-0"
+                            style={{ background: 'var(--surface-3)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                            best
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-ghost flex-shrink-0">{shortHash(commit.hash)}</span>
+                      </div>
+                      {/* Message */}
+                      <div className="text-[12px] text-primary line-clamp-2 leading-snug mb-2">
+                        {commit.message.split('\n')[0]}
+                      </div>
+                      {/* Bottom row: metric + timestamp */}
+                      <div className="flex items-center justify-between">
+                        {commit.metric ? (
+                          <span className="text-[12px] font-mono text-muted">
+                            {commit.metric.value.toFixed(4)}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <span className="text-[10px] text-ghost">{timeAgo(commit.createdAt)}</span>
                       </div>
                     </div>
                   );
