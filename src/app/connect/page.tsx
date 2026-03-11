@@ -62,7 +62,16 @@ export default function ConnectPage() {
       setConnection({ serverUrl, apiKey, adminKey: adminKey || undefined });
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect");
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        setError('Cannot reach server. Check the URL and make sure agenthub is running.')
+      } else if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized') || msg.includes('Forbidden')) {
+        setError('Invalid API key.')
+      } else if (msg.includes('timeout') || msg.includes('AbortError')) {
+        setError('Connection timed out.')
+      } else {
+        setError(`Connection failed: ${msg}`)
+      }
     } finally {
       setLoading(false);
     }
@@ -184,6 +193,16 @@ export default function ConnectPage() {
                   onFocus={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
                   onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-default)")}
                   placeholder="http://localhost:8080" />
+                <p className="text-[11px]" style={{ color: 'var(--text-ghost)', lineHeight: 1.5 }}>
+                  Run agenthub locally:{' '}
+                  <code style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    pip install agenthub &amp;&amp; ah serve
+                  </code>
+                  , then enter{' '}
+                  <code style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    http://localhost:8000
+                  </code>
+                </p>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[11px] block" style={{ color: "var(--text-muted)" }}>API Key</label>
