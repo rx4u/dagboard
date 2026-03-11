@@ -38,6 +38,16 @@ export interface ExtractedMetric {
   value: number;
 }
 
+export type AgentHealthStatus = 'active' | 'idle' | 'stalled' | 'offline';
+
+export interface AgentHealth {
+  status: AgentHealthStatus;
+  lastCommitAt: string | null;
+  minutesSince: number | null;
+  commitCount: number;
+  bestMetricValue: number | null;
+}
+
 // Client-Side DAG Types
 export interface DagNode {
   hash: string;
