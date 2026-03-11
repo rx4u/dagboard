@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GithubLogo, ArrowRight, ArrowUpRight } from "@phosphor-icons/react";
+import { useStore } from "@/lib/store";
 
 const GITHUB_URL = "https://github.com/rx4u/dagboard";
 const KARPATHY_URL = "https://github.com/karpathy/agenthub";
@@ -262,6 +263,7 @@ function FeatureSection({
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
   const [stars, setStars] = useState<number | null>(null);
+  const isConnected = useStore((s) => s.isConnected);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     fetch("https://api.github.com/repos/rx4u/dagboard")
@@ -392,7 +394,7 @@ export default function LandingPage() {
               }}
             >
               <Link
-                href="/connect"
+                href={isConnected ? "/dashboard" : "/connect"}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-[4px] text-[13px] font-medium transition-all"
                 style={{
                   background: "var(--surface-3)",
@@ -410,7 +412,7 @@ export default function LandingPage() {
                   el.style.transform = "translateY(0)";
                 }}
               >
-                Connect a server
+                {isConnected ? "Dashboard" : "Connect a server"}
                 <ArrowRight size={14} />
               </Link>
             </div>
@@ -552,7 +554,7 @@ export default function LandingPage() {
               View on GitHub
             </a>
             <Link
-              href="/connect"
+              href={isConnected ? "/dashboard" : "/connect"}
               className="flex items-center gap-2 px-4 py-2.5 rounded-[4px] text-[13px] transition-colors"
               style={{
                 border: "1px solid var(--border-subtle)",
@@ -561,7 +563,7 @@ export default function LandingPage() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}
             >
-              Connect a server
+              {isConnected ? "Dashboard" : "Connect a server"}
               <ArrowRight size={14} />
             </Link>
           </div>
