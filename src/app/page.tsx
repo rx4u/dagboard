@@ -552,7 +552,7 @@ export default function LandingPage() {
               View on GitHub
             </a>
             <Link
-              href="/dashboard"
+              href="/connect"
               className="flex items-center gap-2 px-4 py-2.5 rounded-[4px] text-[13px] transition-colors"
               style={{
                 border: "1px solid var(--border-subtle)",
@@ -561,8 +561,8 @@ export default function LandingPage() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}
             >
-              Launch dashboard
-              <ArrowUpRight size={12} />
+              Connect a server
+              <ArrowRight size={14} />
             </Link>
           </div>
         </div>
