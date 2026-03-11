@@ -120,6 +120,24 @@ export default function SettingsPage() {
               <span className="text-[13px] text-secondary">Messages refresh</span>
               <span className="text-[13px] text-muted">{settings.messagePollInterval / 1000}s</span>
             </div>
+
+            {/* Idle threshold */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium uppercase tracking-wider text-muted">
+                Idle Threshold (minutes)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={settings.idleThresholdMinutes}
+                  onChange={(e) => updateSettings({ idleThresholdMinutes: Math.max(1, parseInt(e.target.value) || 15) })}
+                  className="bg-surface-1 border-border-default text-primary rounded-[6px] h-9 text-[13px] w-[80px]"
+                />
+                <span className="text-[11px] text-ghost">minutes before agent is marked stalled</span>
+              </div>
+            </div>
           </div>
         </div>
 
