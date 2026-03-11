@@ -31,7 +31,13 @@ export async function fetchGitHubCommits(owner: string, repo: string): Promise<C
       const msg = res.status === 404
         ? `Repo not found: ${owner}/${repo}`
         : res.status === 403
-          ? 'GitHub rate limit exceeded. Try again in a minute.'
+          ? (() => {
+              const reset = res.headers.get('X-RateLimit-Reset')
+              const resetTime = reset
+                ? new Date(parseInt(reset) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'soon'
+              return `GitHub API rate limit reached. Resets at ${resetTime}. Authenticate to get 5000 req/hr.`
+            })()
           : `GitHub API error: ${res.status}`;
       throw new Error(msg);
     }
