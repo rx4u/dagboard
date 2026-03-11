@@ -27,7 +27,7 @@ function StatCard({
 }) {
   return (
     <div
-      className="border border-border-subtle rounded-[6px] p-3 animate-fade-up bg-surface-1"
+      className="border border-dashed border-border-subtle rounded-[6px] p-3 animate-fade-up bg-surface-1"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center gap-1 mb-2">
@@ -45,7 +45,7 @@ function StatCard({
 function StatCardSkeleton({ delay = 0 }: { delay?: number }) {
   return (
     <div
-      className="border border-border-subtle rounded-[6px] p-3 animate-fade-in bg-surface-1"
+      className="border border-dashed border-border-subtle rounded-[6px] p-3 animate-fade-in bg-surface-1"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center gap-1 mb-2">
@@ -252,11 +252,11 @@ export default function DagPage() {
         </div>
       </div>
 
-      {/* Agent legend */}
+      {/* Agent legend — max 8, overflow count */}
       {graph && graph.agents.length > 0 && (
-        <div className="flex items-center gap-4 flex-wrap -mt-2">
+        <div className="flex items-center gap-3 flex-wrap -mt-2">
           <span className="text-[10px] font-medium uppercase tracking-wider text-ghost">Agents</span>
-          {graph.agents.map(agentId => {
+          {graph.agents.slice(0, 8).map(agentId => {
             const color = getAgentColor(agentId);
             return (
               <div key={agentId} className="flex items-center gap-1.5">
@@ -265,6 +265,9 @@ export default function DagPage() {
               </div>
             );
           })}
+          {graph.agents.length > 8 && (
+            <span className="text-[11px] text-ghost">+{graph.agents.length - 8} more</span>
+          )}
         </div>
       )}
 
@@ -281,33 +284,53 @@ export default function DagPage() {
               <div className="text-[13px] text-ghost">No commits yet</div>
             </div>
           ) : (
-            <div className="p-3 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
+            <div className="p-3 grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
               {Array.from(graph.nodes.values())
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                 .map(commit => {
                   const color = getAgentColor(commit.agentId);
                   const isSelected = dag.selectedNodeId === commit.hash;
+                  const isBest = graph.bestHash === commit.hash;
                   return (
                     <div
                       key={commit.hash}
-                      className="border border-border-subtle rounded-[4px] p-2.5 bg-surface-1 hover:bg-surface-2 transition-colors cursor-pointer"
-                      style={isSelected ? { borderColor: 'var(--border-default)', background: 'var(--surface-2)' } : {}}
+                      className="relative rounded-[4px] overflow-hidden bg-surface-1 hover:bg-surface-2 transition-colors cursor-pointer"
+                      style={{
+                        border: `1px solid ${isSelected ? 'var(--border-default)' : 'var(--border-subtle)'}`,
+                        background: isSelected ? 'var(--surface-2)' : undefined,
+                      }}
                     >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                        <span className="text-[10px] text-ghost truncate flex-1">{commit.agentId}</span>
-                        <span className="text-[10px] font-mono text-ghost flex-shrink-0">{shortHash(commit.hash)}</span>
-                      </div>
-                      <div className="text-[11px] text-secondary line-clamp-2 mb-1.5 leading-relaxed">
-                        {commit.message.split('\n')[0]}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        {commit.metric ? (
-                          <span className="text-[11px] font-mono text-primary">{commit.metric.value.toFixed(4)}</span>
-                        ) : (
-                          <span />
-                        )}
-                        <span className="text-[10px] text-ghost">{timeAgo(commit.createdAt)}</span>
+                      {/* Agent color bar */}
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
+                      <div className="pl-3.5 pr-3 pt-2.5 pb-2.5">
+                        {/* Top row: agent + hash */}
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-[11px] text-secondary truncate font-medium">{commit.agentId}</span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {isBest && (
+                              <span className="text-[9px] font-medium uppercase tracking-wider px-1 py-0.5 rounded-[2px]"
+                                style={{ background: 'var(--surface-3)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                                best
+                              </span>
+                            )}
+                            <span className="text-[10px] font-mono text-ghost">{shortHash(commit.hash)}</span>
+                          </div>
+                        </div>
+                        {/* Message */}
+                        <div className="text-[12px] text-primary line-clamp-2 leading-snug mb-2">
+                          {commit.message.split('\n')[0]}
+                        </div>
+                        {/* Bottom row: metric + timestamp */}
+                        <div className="flex items-center justify-between">
+                          {commit.metric ? (
+                            <span className="text-[13px] font-mono font-medium" style={{ color }}>
+                              {commit.metric.value.toFixed(4)}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+                          <span className="text-[10px] text-ghost">{timeAgo(commit.createdAt)}</span>
+                        </div>
                       </div>
                     </div>
                   );
