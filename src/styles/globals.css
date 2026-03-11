@@ -1,0 +1,348 @@
+@import "tailwindcss";
+
+/* ============================================
+   AgentHub Design Tokens
+   Monochrome. Mono-font. Dark only. 4px grid.
+   ============================================ */
+
+:root {
+  /* Display font (Space Grotesk, loaded via <link> in layout.tsx) */
+  --font-display: 'Space Grotesk', sans-serif;
+
+  /* Background Scale (elevation via luminance) */
+  --void: #050507;
+  --base: #0A0A0C;
+  --surface-1: #111116;
+  --surface-2: #18181E;
+  --surface-3: #222229;
+  --surface-4: #2D2D36;
+
+  /* Text Scale */
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-muted: #909099;
+  --text-ghost: #6B6B76;
+
+  /* Borders */
+  --border-default: #3F3F46;
+  --border-subtle: #2A2A31;
+
+  /* Semantic (data only) */
+  --improved: #4ADE80;
+  --regressed: #FB7185;
+  --running: #38BDF8;
+  --error: #EF4444;
+  --neutral: #71717A;
+
+  /* Agent Colors (DAG nodes + tiny dots only) */
+  --agent-0: #818CF8;
+  --agent-1: #38BDF8;
+  --agent-2: #4ADE80;
+  --agent-3: #FB923C;
+  --agent-4: #F472B6;
+  --agent-5: #A78BFA;
+  --agent-6: #2DD4BF;
+  --agent-7: #FBBF24;
+
+  /* 4px Spacing System */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius: moderate, not too rounded, not too sharp */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Animation */
+  --dur-fast: 120ms;
+  --dur-normal: 200ms;
+  --dur-slow: 300ms;
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Layout */
+  --sidebar-collapsed: 56px;
+  --sidebar-expanded: 220px;
+  --topbar-height: 48px;
+
+  /* ==========================================
+     shadcn/ui Theme Overrides
+     Maps shadcn's expected variables to our tokens
+     ========================================== */
+  --background: var(--base);
+  --foreground: var(--text-primary);
+
+  --card: var(--surface-1);
+  --card-foreground: var(--text-primary);
+
+  --popover: var(--surface-4);
+  --popover-foreground: var(--text-primary);
+
+  --primary: var(--text-primary);
+  --primary-foreground: var(--base);
+
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text-secondary);
+
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+
+  --accent: var(--surface-2);
+  --accent-foreground: var(--text-secondary);
+
+  --destructive: var(--error);
+  --destructive-foreground: var(--text-primary);
+
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--text-muted);
+
+  /* shadcn radius: 6px (moderate) */
+  --radius: 0.375rem;
+}
+
+/* ============================================
+   Light Theme Overrides
+   ============================================ */
+
+html.light {
+  --void: #ffffff;
+  --base: #f9f9fb;
+  --surface-1: #f2f2f5;
+  --surface-2: #eaeaed;
+  --surface-3: #dddde2;
+  --surface-4: #d0d0d5;
+
+  --text-primary: #0a0a0f;
+  --text-secondary: #3f3f46;
+  --text-muted: #71717a;
+  --text-ghost: #a1a1aa;
+
+  --border-default: #d4d4d8;
+  --border-subtle: #e4e4e7;
+}
+
+/* ============================================
+   Tailwind v4 Theme Extension
+   ============================================ */
+
+@theme {
+  --color-void: var(--void);
+  --color-base: var(--base);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-ghost: var(--text-ghost);
+
+  --color-border-default: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-improved: var(--improved);
+  --color-regressed: var(--regressed);
+  --color-running: var(--running);
+  --color-error: var(--error);
+
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+}
+
+html {
+  background: var(--void);
+  color: var(--text-secondary);
+  font-family: var(--font-geist-mono), var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--base);
+  min-height: 100vh;
+}
+
+/* ============================================
+   Hide native scrollbars globally
+   (shadcn ScrollArea handles all scrolling)
+   ============================================ */
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ============================================
+   shadcn ScrollArea thumb styling
+   ============================================ */
+
+[data-radix-scroll-area-viewport] {
+  scrollbar-width: none;
+}
+
+[data-radix-scroll-area-thumb] {
+  background: var(--surface-3) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+[data-radix-scroll-area-thumb]:hover {
+  background: var(--surface-4) !important;
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+
+::selection {
+  background: rgba(129, 140, 248, 0.2);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Focus Rings (monochrome, matches shadcn --ring)
+   ============================================ */
+
+:focus-visible {
+  outline: 1px solid var(--text-muted);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Utilities
+   ============================================ */
+
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.divider-fade {
+  height: 1px;
+  background: linear-gradient(to right, var(--border-default), transparent);
+}
+
+/* ============================================
+   ReactFlow Overrides
+   ============================================ */
+
+.react-flow__node-dagNode {
+  padding: 0;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.react-flow__node-dagNode.selected,
+.react-flow__node-dagNode:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.react-flow__node-dagNode:hover .dag-node-box {
+  transform: scale(1.25);
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__controls {
+  display: none;
+}
+
+.react-flow__edge-path {
+  stroke-opacity: 0.5;
+}
+
+.react-flow__minimap {
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.react-flow__minimap-svg {
+  background: var(--surface-2) !important;
+}
+
+/* ============================================
+   Entrance & Micro-interaction Animations
+   ============================================ */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%       { transform: scale(1.8); opacity: 0.35; }
+}
+
+@keyframes node-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fade-up var(--dur-normal) var(--ease-out) both;
+}
+
+.animate-fade-in {
+  animation: fade-in var(--dur-normal) var(--ease-out) both;
+}
+
+.dot-pulse {
+  animation: status-pulse 2.8s ease-in-out infinite;
+}
+
+/* Skeleton shimmer override — richer gradient */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
