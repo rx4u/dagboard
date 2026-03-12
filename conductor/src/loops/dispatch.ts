@@ -22,6 +22,8 @@ export class DispatchLoop {
       }
 
       if (task.checkpoint === 'before_start') {
+        if (this.state.pendingCheckpoints.has(task.id)) continue
+
         const checkpointMsg = [
           `CHECKPOINT: ${task.id}`,
           '---',
@@ -34,9 +36,9 @@ export class DispatchLoop {
           `  DEFER: ${task.id} (ask again in 1 hour)`,
         ].filter(Boolean).join('\n')
 
-        await this.api.createPost(this.config.checkpoints.channel, checkpointMsg)
         taskState.status = 'checkpoint_waiting'
         this.state.pendingCheckpoints.add(task.id)
+        await this.api.createPost(this.config.checkpoints.channel, checkpointMsg)
         continue
       }
 
@@ -47,9 +49,9 @@ export class DispatchLoop {
         `Conductor dispatched at ${new Date().toISOString()}`,
       ].join('\n')
 
-      await this.api.createPost(task.channel, dispatchMsg)
       taskState.status = 'dispatched'
       taskState.dispatched_at = new Date().toISOString()
+      await this.api.createPost(task.channel, dispatchMsg)
     }
   }
 }

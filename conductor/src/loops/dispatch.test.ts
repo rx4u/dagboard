@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DispatchLoop } from './dispatch.js'
-import type { ConductorConfig, SidecarState } from '../types.js'
+import type { ConductorConfig, SidecarState, TaskStatus } from '../types.js'
 
 const mockApi = {
   listPosts: vi.fn(),
@@ -21,11 +21,11 @@ const config: ConductorConfig = {
   stall: { threshold_minutes: 30 },
 }
 
-function makeState(overrides: Record<string, string> = {}): SidecarState {
-  const defaults: Record<string, string> = { 'task-1': 'pending', 'task-2': 'pending', 'task-3': 'pending' }
+function makeState(overrides: Record<string, TaskStatus> = {}): SidecarState {
+  const defaults: Record<string, TaskStatus> = { 'task-1': 'pending', 'task-2': 'pending', 'task-3': 'pending' }
   const merged = { ...defaults, ...overrides }
   return {
-    tasks: new Map(Object.entries(merged).map(([id, status]) => [id, { id, status: status as any }])),
+    tasks: new Map(Object.entries(merged).map(([id, status]) => [id, { id, status }])),
     pendingCheckpoints: new Set(),
   }
 }
