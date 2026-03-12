@@ -9,7 +9,7 @@ when an assumption seems wrong.
 
 Only post if you have a concrete, actionable suggestion. If nothing is notable, respond with exactly: NOTHING`
 
-const RECENT_POSTS_LIMIT = 50
+const RECENT_POSTS_LIMIT = 100
 const CONTEXT_WINDOW = 100
 
 export class ObserverLoop {
@@ -33,22 +33,32 @@ export class ObserverLoop {
       .join('\n')
 
     const taskSummary = [...this.state.tasks.values()]
-      .map(t => `${t.id}: ${t.status}`)
+      .map(t => {
+        const cfg = this.config.tasks.find(tc => tc.id === t.id)
+        return `${t.id} (${cfg?.description ?? ''}): ${t.status}`
+      })
       .join(', ')
 
     const userPrompt = `Current task states: ${taskSummary}\n\nRecent agent activity:\n${recentActivity || '(none)'}`
 
-    const response = await (this.anthropic as unknown as Anthropic).messages.create({
-      model: this.config.observer.model,
-      max_tokens: 512,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
-    })
+    try {
+      const response = await this.anthropic.messages.create({
+        model: this.config.observer.model,
+        max_tokens: 512,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userPrompt }],
+      })
 
-    const text = (response.content as Array<{ type: string; text?: string }>).find(b => b.type === 'text')?.text?.trim() ?? 'NOTHING'
-    if (text === 'NOTHING') return
+      const text = (response.content as Array<{ type: string; text?: string }>).find(b => b.type === 'text')?.text?.trim() ?? 'NOTHING'
+      if (text === 'NOTHING') return
 
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-    await this.api.createPost(this.config.observer.channel, `OBSERVER [${timestamp}]:\n${text}`)
+      const now = new Date()
+      const h = String(now.getUTCHours()).padStart(2, '0')
+      const m = String(now.getUTCMinutes()).padStart(2, '0')
+      const timestamp = `${h}:${m}`
+      await this.api.createPost(this.config.observer.channel, `OBSERVER [${timestamp}]:\n${text}`)
+    } catch (e) {
+      process.stderr.write(`[observer] tick failed: ${(e as Error).message}\n`)
+    }
   }
 }

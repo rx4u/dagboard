@@ -10,7 +10,8 @@ const STATUS_SYMBOL: Record<TaskStatus, string> = {
   rejected: '✗',
 }
 
-const HISTORY_LIMIT = 200
+const FETCH_LIMIT_PER_CHANNEL = 200
+const DISPLAY_LIMIT = 200
 const SEPARATOR = '='.repeat(50)
 
 export async function buildPageSummary(
@@ -20,11 +21,11 @@ export async function buildPageSummary(
   state: SidecarState,
 ): Promise<string> {
   const allPosts = await Promise.all(
-    config.agents.map(a => api.listPosts(a.id, HISTORY_LIMIT))
+    config.agents.map(a => api.listPosts(a.id, FETCH_LIMIT_PER_CHANNEL))
   )
   const recentActivity = allPosts.flat()
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
-    .slice(-HISTORY_LIMIT)
+    .slice(-DISPLAY_LIMIT)
     .map(p => `[${p.agent_id}] ${p.content}`)
     .join('\n')
 
@@ -45,14 +46,18 @@ export async function buildPageSummary(
     openQuestions.push(`  • ${taskId} checkpoint waiting since ${ts?.dispatched_at ? new Date(ts.dispatched_at).toLocaleTimeString() : 'unknown'}`)
   }
 
-  const response = await (anthropic as unknown as Anthropic).messages.create({
-    model: 'claude-haiku-3',
-    max_tokens: 512,
-    system: 'Summarize agent activity in 2-4 concise sentences covering what happened, key decisions made, and any issues. Be factual and brief.',
-    messages: [{ role: 'user', content: `Recent activity:\n${recentActivity || '(none)'}` }],
-  })
-
-  const narrative = (response.content as Array<{ type: string; text?: string }>).find(b => b.type === 'text')?.text?.trim() ?? '(no activity)'
+  let narrative: string
+  try {
+    const response = await anthropic.messages.create({
+      model: config.observer.model,
+      max_tokens: 512,
+      system: 'Summarize agent activity in 2-4 concise sentences covering what happened, key decisions made, and any issues. Be factual and brief.',
+      messages: [{ role: 'user', content: `Recent activity:\n${recentActivity || '(none)'}` }],
+    })
+    narrative = (response.content as Array<{ type: string; text?: string }>).find(b => b.type === 'text')?.text?.trim() ?? '(no activity)'
+  } catch {
+    narrative = '(LLM unavailable)'
+  }
 
   const nextAction = state.pendingCheckpoints.size > 0
     ? `Run: conductor approve ${[...state.pendingCheckpoints][0]}\nOr open dagboard ${config.checkpoints.channel} channel to review first.`

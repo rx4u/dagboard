@@ -47,10 +47,34 @@ describe('buildPageSummary', () => {
   })
 
   it('includes LLM narrative', async () => {
-    mockAnthropic.messages.create.mockResolvedValueOnce({
-      content: [{ type: 'text', text: 'agent-alpha completed auth at 03:22. Tests ready.' }]
-    })
     const summary = await buildPageSummary(config, mockApi as any, mockAnthropic as any, makeState())
     expect(summary).toContain('completed auth')
+  })
+
+  it('includes OPEN QUESTIONS when pendingCheckpoints is non-empty', async () => {
+    const summary = await buildPageSummary(config, mockApi as any, mockAnthropic as any, makeState())
+    expect(summary).toContain('OPEN QUESTIONS')
+    expect(summary).toContain('task-2')
+  })
+
+  it('suggests approve command when checkpoint is pending', async () => {
+    const summary = await buildPageSummary(config, mockApi as any, mockAnthropic as any, makeState())
+    expect(summary).toContain('conductor approve task-2')
+  })
+
+  it('shows no pending actions when no checkpoints', async () => {
+    mockAnthropic.messages.create.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'All done.' }]
+    })
+    const emptyState: SidecarState = {
+      tasks: new Map([
+        ['task-1', { id: 'task-1', status: 'complete' }],
+        ['task-2', { id: 'task-2', status: 'complete' }],
+      ]),
+      pendingCheckpoints: new Set(),
+    }
+    const summary = await buildPageSummary(config, mockApi as any, mockAnthropic as any, emptyState)
+    expect(summary).toContain('No pending actions')
+    expect(summary).not.toContain('OPEN QUESTIONS')
   })
 })

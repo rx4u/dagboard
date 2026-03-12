@@ -65,4 +65,27 @@ describe('ObserverLoop', () => {
     await loop.tick()
     expect(mockApi.listPosts).not.toHaveBeenCalled()
   })
+
+  it('does not post when LLM returns NOTHING with surrounding whitespace', async () => {
+    mockApi.listPosts.mockResolvedValue([])
+    mockAnthropic.messages.create.mockResolvedValueOnce({
+      content: [{ type: 'text', text: '  NOTHING  ' }]
+    })
+    const loop = new ObserverLoop(config, mockApi as any, mockAnthropic as any, makeState())
+    await loop.tick()
+    expect(mockApi.createPost).not.toHaveBeenCalled()
+  })
+
+  it('post has correct OBSERVER [HH:MM]: prefix format', async () => {
+    mockApi.listPosts.mockResolvedValue([])
+    mockAnthropic.messages.create.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'A suggestion.' }]
+    })
+    const loop = new ObserverLoop(config, mockApi as any, mockAnthropic as any, makeState())
+    await loop.tick()
+    expect(mockApi.createPost).toHaveBeenCalledWith(
+      'conductor-observer',
+      expect.stringMatching(/^OBSERVER \[\d{2}:\d{2}\]:/)
+    )
+  })
 })
