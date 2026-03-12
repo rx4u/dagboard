@@ -9,19 +9,11 @@ export class DispatchLoop {
   ) {}
 
   async tick(): Promise<void> {
-    for (let i = 0; i < this.config.tasks.length; i++) {
-      const task = this.config.tasks[i]
+    for (const task of this.config.tasks) {
       const taskState = this.state.tasks.get(task.id)
       if (!taskState) continue
 
       if (taskState.status !== 'pending') continue
-
-      // Implicit sequential dependency: previous task must be complete
-      if (i > 0) {
-        const prevTask = this.config.tasks[i - 1]
-        const prevState = this.state.tasks.get(prevTask.id)
-        if (prevState?.status !== 'complete') continue
-      }
 
       // Explicit dependency
       if (task.depends_on) {

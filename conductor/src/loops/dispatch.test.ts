@@ -71,8 +71,22 @@ describe('DispatchLoop', () => {
     expect(state.pendingCheckpoints.has('task-3')).toBe(true)
   })
 
+  it('dispatches task with no depends_on even when previous array task is not complete', async () => {
+    // task-3 has checkpoint: before_start and no depends_on
+    // task-1 and task-2 are still pending
+    // task-3 should still fire its checkpoint (not be blocked by task-1/task-2)
+    const state = makeState({ 'task-1': 'pending', 'task-2': 'pending', 'task-3': 'pending' })
+    const loop = new DispatchLoop(config, mockApi as any, state)
+    await loop.tick()
+    // task-1 gets dispatched (no depends_on, no checkpoint)
+    expect(state.tasks.get('task-1')?.status).toBe('dispatched')
+    // task-3 should have its checkpoint posted (no depends_on blocks it)
+    expect(state.pendingCheckpoints.has('task-3')).toBe(true)
+    expect(state.tasks.get('task-3')?.status).toBe('checkpoint_waiting')
+  })
+
   it('does not re-dispatch already dispatched task', async () => {
-    const state = makeState({ 'task-1': 'dispatched' })
+    const state = makeState({ 'task-1': 'dispatched', 'task-2': 'dispatched', 'task-3': 'dispatched' })
     const loop = new DispatchLoop(config, mockApi as any, state)
     await loop.tick()
     expect(mockApi.createPost).not.toHaveBeenCalled()
