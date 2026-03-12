@@ -66,14 +66,14 @@ describe('CheckpointLoop', () => {
     expect(state.tasks.get('task-2')?.status).toBe('checkpoint_waiting')
   })
 
-  it('removes task from pendingCheckpoints on human-posted DEFER with no status change', async () => {
+  it('removes task from pendingCheckpoints on human-posted DEFER and resets status to pending', async () => {
     mockApi.listPosts.mockResolvedValueOnce([post('DEFER: task-2')])
     const state = makeState()
     const loop = new CheckpointLoop(config, mockApi as any, state)
     await loop.tick()
     expect(state.pendingCheckpoints.has('task-2')).toBe(false)
-    // Status unchanged — still checkpoint_waiting
-    expect(state.tasks.get('task-2')?.status).toBe('checkpoint_waiting')
+    // Status reset to pending so task can be re-raised on next dispatch tick
+    expect(state.tasks.get('task-2')?.status).toBe('pending')
   })
 
   it('posts DEFER after timeout and removes from pending', async () => {

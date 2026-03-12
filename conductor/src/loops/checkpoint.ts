@@ -1,7 +1,7 @@
 import type { AgenthubClient } from '../api.js'
 import type { ConductorConfig, SidecarState } from '../types.js'
 
-const CHECKPOINT_SCAN_LIMIT = 200
+const CHECKPOINT_SCAN_LIMIT = 1000
 
 export class CheckpointLoop {
   constructor(
@@ -37,7 +37,14 @@ export class CheckpointLoop {
           }
         } else {
           const deferMatch = content.match(/^DEFER:\s+(\S+)/)
-          if (deferMatch) this.state.pendingCheckpoints.delete(deferMatch[1])
+          if (deferMatch) {
+            const id = deferMatch[1]
+            if (this.state.pendingCheckpoints.has(id)) {
+              const taskState = this.state.tasks.get(id)
+              if (taskState) taskState.status = 'pending'
+            }
+            this.state.pendingCheckpoints.delete(id)
+          }
         }
       }
     }

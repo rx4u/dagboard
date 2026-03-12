@@ -23,8 +23,12 @@ export class ObserverLoop {
   async tick(): Promise<void> {
     if (!this.config.observer.enabled) return
 
+    const channelIds = [...new Set([
+      ...this.config.agents.map(a => a.id),
+      ...this.config.tasks.map(t => t.channel),
+    ])]
     const allPosts = await Promise.all(
-      this.config.agents.map(a => this.api.listPosts(a.id, RECENT_POSTS_LIMIT))
+      channelIds.map(ch => this.api.listPosts(ch, RECENT_POSTS_LIMIT).catch(() => []))
     )
     const recentActivity = allPosts.flat()
       .sort((a, b) => a.created_at.localeCompare(b.created_at))

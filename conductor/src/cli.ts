@@ -35,7 +35,13 @@ export function buildCli(): Command {
       const config = loadConfig(opts.config)
       const api = new AgenthubClient(config.dagboard.url, config.dagboard.api_key)
       const anthropic = new Anthropic()
-      const channels = [config.checkpoints.channel, ...config.agents.map(a => a.id)]
+      const channels = [...new Set([
+        config.checkpoints.channel,
+        config.context.channel,
+        config.observer.channel,
+        ...config.agents.map(a => a.id),
+        ...config.tasks.map(t => t.channel),
+      ])]
       const allPosts = await Promise.all(channels.map(ch => api.listPosts(ch, 200).catch(() => [])))
       const state = buildStateFromHistory(
         config.tasks,
@@ -74,7 +80,13 @@ export function buildCli(): Command {
     .action(async (opts: { config: string }) => {
       const config = loadConfig(opts.config)
       const api = new AgenthubClient(config.dagboard.url, config.dagboard.api_key)
-      const channels = [config.checkpoints.channel, ...config.agents.map(a => a.id)]
+      const channels = [...new Set([
+        config.checkpoints.channel,
+        config.context.channel,
+        config.observer.channel,
+        ...config.agents.map(a => a.id),
+        ...config.tasks.map(t => t.channel),
+      ])]
       const allPosts = await Promise.all(channels.map(ch => api.listPosts(ch, 200).catch(() => [])))
       const state = buildStateFromHistory(
         config.tasks,

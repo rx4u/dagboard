@@ -37,6 +37,7 @@ export class DispatchLoop {
         ].filter(Boolean).join('\n')
 
         taskState.status = 'checkpoint_waiting'
+        taskState.dispatched_at = new Date().toISOString()
         this.state.pendingCheckpoints.add(task.id)
         await this.api.createPost(this.config.checkpoints.channel, checkpointMsg)
         continue
