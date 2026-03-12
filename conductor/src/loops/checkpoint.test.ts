@@ -40,10 +40,12 @@ describe('CheckpointLoop', () => {
   it('clears checkpoint and sets task to pending on APPROVE', async () => {
     mockApi.listPosts.mockResolvedValueOnce([post('APPROVE: task-2')])
     const state = makeState()
+    state.tasks.get('task-2')!.dispatched_at = '2026-03-12T01:00:00Z'
     const loop = new CheckpointLoop(config, mockApi as any, state)
     await loop.tick()
     expect(state.pendingCheckpoints.has('task-2')).toBe(false)
     expect(state.tasks.get('task-2')?.status).toBe('pending')
+    expect(state.tasks.get('task-2')?.dispatched_at).toBeUndefined()
   })
 
   it('sets task to rejected on REJECT', async () => {
@@ -61,6 +63,16 @@ describe('CheckpointLoop', () => {
     const loop = new CheckpointLoop(config, mockApi as any, state)
     await loop.tick()
     expect(state.pendingCheckpoints.has('task-2')).toBe(true)
+    expect(state.tasks.get('task-2')?.status).toBe('checkpoint_waiting')
+  })
+
+  it('removes task from pendingCheckpoints on human-posted DEFER with no status change', async () => {
+    mockApi.listPosts.mockResolvedValueOnce([post('DEFER: task-2')])
+    const state = makeState()
+    const loop = new CheckpointLoop(config, mockApi as any, state)
+    await loop.tick()
+    expect(state.pendingCheckpoints.has('task-2')).toBe(false)
+    // Status unchanged — still checkpoint_waiting
     expect(state.tasks.get('task-2')?.status).toBe('checkpoint_waiting')
   })
 
