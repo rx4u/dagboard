@@ -1,3 +1,3 @@
-// Conductor CLI entry point — wired in Task 8
-console.log('conductor v0.1.0');
-export {};
+#!/usr/bin/env node
+import { buildCli } from './cli.js';
+buildCli().parse(process.argv);
